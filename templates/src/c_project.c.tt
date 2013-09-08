@@ -1,0 +1,16 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <math.h>
+#include <assert.h>
+
+#include "CException.h"
+void print_and_throw_error(const char const *message)
+{
+  fprintf(stderr, "ERROR: %s", message);
+  Throw(1);
+}
+
+#include "<%= name %>.h"
+

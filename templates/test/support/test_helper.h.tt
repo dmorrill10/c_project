@@ -1,0 +1,13 @@
+#ifndef __TEST_HELPER__
+#define __TEST_HELPER__
+
+#include <stdio.h>
+
+#include <unity.h>
+#include <CException.h>
+
+#define DEBUG_PRINT(...) \
+    printf(__VA_ARGS__); \
+    fflush(NULL);
+
+#endif

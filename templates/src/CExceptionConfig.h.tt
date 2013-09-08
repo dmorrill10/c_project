@@ -1,0 +1,8 @@
+#ifndef __CEXCEPTION_CONFIG_H__
+#define __CEXCEPTION_CONFIG_H__
+
+#include <stdlib.h>
+
+#define CEXCEPTION_NO_CATCH_HANDLER(id) exit(id)
+
+#endif
