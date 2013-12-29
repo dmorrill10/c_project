@@ -4,7 +4,7 @@ require 'thor'
 require 'date'
 
 module CProject
-  class New < Thor::Group
+  class NewProject < Thor::Group
     include Thor::Actions
 
     argument :name, :desc => 'Name of the new project.'
@@ -18,29 +18,10 @@ module CProject
     end
 
     def fill_root
-      create_file_from_template "LICENCE"
-      create_file_from_template "README.md"
-      create_file_from_template "Makefile"
-    end
-
-    def src
-      create_file_from_template 'src/CExceptionConfig.h'
-      template 'templates/src/c_project.c.tt', file_path("src/#{name}.c")
-      template 'templates/src/c_project.h.tt', file_path("src/#{name}.h")
-      create_file_from_template 'src/main.c'
-    end
-
-    def test
-      template 'templates/test/test_c_project.c.tt', file_path("test/test_#{name}.c")
-    end
-
-    def support
-      create_file_from_template 'test/support/test_helper.c'
-      create_file_from_template 'test/support/test_helper.h'
-    end
-
-    def vendor
-      directory 'templates/vendor', file_path("vendor")
+      empty_directory file_path('bin')
+      empty_directory file_path('experiments')
+      empty_directory file_path('scripts')
+      create_file_from_shared_template "LICENCE"
     end
 
     private
@@ -53,7 +34,7 @@ module CProject
       File.join name, file_name
     end
 
-    def create_file_from_template(file_name)
+    def create_file_from_shared_template(file_name)
       template(
         "templates/#{file_name}.tt",
         file_path(file_name)
@@ -61,16 +42,123 @@ module CProject
     end
   end
 
-  class CProject < Thor
-    map 'n' => :new
+  class C < NewProject
+    def fill_root
+      super
+      create_file_from_template "README.md"
+      create_file_from_template "Makefile"
+    end
 
+    def src
+      create_file_from_template 'src/CExceptionConfig.h'
+      template 'templates/c/src/c_project.c.tt', file_path("src/#{name}.c")
+      template 'templates/c/src/c_project.h.tt', file_path("src/#{name}.h")
+      create_file_from_template 'src/main.c'
+    end
+
+    def test
+      template 'templates/c/test/test_c_project.c.tt', file_path("test/test_#{name}.c")
+    end
+
+    def support
+      create_file_from_template 'test/support/test_helper.c'
+      create_file_from_template 'test/support/test_helper.h'
+    end
+
+    def vendor
+      directory 'templates/c/vendor', file_path("vendor")
+      directory 'templates/commander.c', file_path('vendor/commander.c')
+    end
+
+    private
+
+    def create_file_from_template(file_name)
+      template(
+        "templates/c/#{file_name}.tt",
+        file_path(file_name)
+      )
+    end
+
+    def extension
+      'c'
+    end
+
+    def compiler
+      'CC'
+    end
+  end
+
+  class Cpp < Thor::Group
+    include Thor::Actions
+
+    argument :name, :desc => 'Name of the new project.'
+
+    def self.source_root
+      File.expand_path('../../', __FILE__)
+    end
+
+    def fill_root
+      super
+      create_file_from_template "README.md"
+      create_file_from_template "Makefile"
+    end
+
+    # @todo
+    # def src
+    #   create_file_from_template 'src/CExceptionConfig.h'
+    #   template 'templates/src/c_project.c.tt', file_path("src/#{name}.c")
+    #   template 'templates/src/c_project.h.tt', file_path("src/#{name}.h")
+    #   create_file_from_template 'src/main.c'
+    # end
+
+    # def test
+    #   template 'templates/test/test_c_project.c.tt', file_path("test/test_#{name}.c")
+    # end
+
+    # def support
+    #   create_file_from_template 'test/support/test_helper.c'
+    #   create_file_from_template 'test/support/test_helper.h'
+    # end
+
+    # def vendor
+    #   directory 'templates/vendor', file_path("vendor")
+    # end
+
+    private
+
+    def create_file_from_template(file_name)
+      template(
+        "templates/cpp/#{file_name}.tt",
+        file_path(file_name)
+      )
+    end
+
+    def extension
+      'cpp'
+    end
+
+    def compiler
+      'CCPP'
+    end
+  end
+
+  class CProject < Thor
     register(
-      New,
-      'new',
-      'new NAME',
+      C,
+      'c',
+      'c NAME',
       "Creates a new C project the name NAME"
     )
-    tasks["new"].options = New.class_options
+    tasks["c"].options = C.class_options
+
+    # @todo
+    # register(
+    #   Cpp,
+    #   'c++',
+    #   'c++ NAME',
+    #   "Creates a new C++ project the name NAME"
+    # )
+    # tasks["c++"].options = Cpp.class_options
   end
 end
 
