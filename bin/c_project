@@ -7,6 +7,8 @@ module CProject
   class NewProject < Thor::Group
     include Thor::Actions
 
+    EXECUTABLE_PERMISSIONS = 0775
+
     argument :name, :desc => 'Name of the new project.'
 
     def self.source_root
@@ -18,10 +20,12 @@ module CProject
     end
 
     def fill_root
+      create_file_from_shared_template "LICENCE"
       empty_directory file_path('bin')
       empty_directory file_path('experiments')
-      empty_directory file_path('scripts')
-      create_file_from_shared_template "LICENCE"
+      shared_directory 'scripts'
+      chmod file_path('scripts/start_new_experiment.sh'), EXECUTABLE_PERMISSIONS
+      chmod file_path('scripts/experiment'), EXECUTABLE_PERMISSIONS
     end
 
     private
@@ -39,6 +43,10 @@ module CProject
         "templates/#{file_name}.tt",
         file_path(file_name)
       )
+    end
+
+    def shared_directory(dir)
+      directory "templates/#{dir}", file_path(dir)
     end
   end
 
@@ -67,7 +75,7 @@ module CProject
 
     def vendor
       directory 'templates/c/vendor', file_path("vendor")
-      directory 'templates/commander.c', file_path('vendor/commander.c')
+      shared_directory 'vendor/commander.c'
     end
 
     private
@@ -88,7 +96,7 @@ module CProject
     end
   end
 
-  class Cpp < Thor::Group
+  class Cpp < NewProject
     include Thor::Actions
 
     argument :name, :desc => 'Name of the new project.'
@@ -103,26 +111,25 @@ module CProject
       create_file_from_template "Makefile"
     end
 
-    # @todo
-    # def src
-    #   create_file_from_template 'src/CExceptionConfig.h'
-    #   template 'templates/src/c_project.c.tt', file_path("src/#{name}.c")
-    #   template 'templates/src/c_project.h.tt', file_path("src/#{name}.h")
-    #   create_file_from_template 'src/main.c'
-    # end
+    def src
+      template 'templates/cpp/src/project.cpp.tt', file_path("src/#{name}.cpp")
+      template 'templates/cpp/src/project.hpp.tt', file_path("src/#{name}.hpp")
+      create_file_from_template 'src/main.cpp'
+    end
 
-    # def test
-    #   template 'templates/test/test_c_project.c.tt', file_path("test/test_#{name}.c")
-    # end
+    def test
+      template 'templates/cpp/test/test_project.cpp.tt', file_path("test/test_#{name}.cpp")
+    end
 
-    # def support
-    #   create_file_from_template 'test/support/test_helper.c'
-    #   create_file_from_template 'test/support/test_helper.h'
-    # end
+    def support
+      create_file_from_template 'test/support/test_helper.cpp'
+      create_file_from_template 'test/support/test_helper.hpp'
+    end
 
-    # def vendor
-    #   directory 'templates/vendor', file_path("vendor")
-    # end
+    def vendor
+      directory 'templates/cpp/vendor', file_path("vendor")
+      shared_directory 'vendor/commander.c'
+    end
 
     private
 
@@ -151,14 +158,13 @@ module CProject
     )
     tasks["c"].options = C.class_options
 
-    # @todo
-    # register(
-    #   Cpp,
-    #   'c++',
-    #   'c++ NAME',
-    #   "Creates a new C++ project the name NAME"
-    # )
-    # tasks["c++"].options = Cpp.class_options
+    register(
+      Cpp,
+      'c++',
+      'c++ NAME',
+      "Creates a new C++ project the name NAME"
+    )
+    tasks["c++"].options = Cpp.class_options
   end
 end
 

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+# @todo Execute project with different parameters
+echo "Hi, I'm an experiment!"
