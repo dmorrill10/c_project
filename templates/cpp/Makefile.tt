@@ -122,7 +122,7 @@ test: clean $(TEST_EXECUTABLE_DIR) $(TEST1)
 # Clean
 #============
 clean:
-	-rm -fr $(TARGET) obj *.out $(THIS_DIR)/test/*.out core.*
+	-rm -fr $(TARGET) obj $(THIS_DIR)/test/bin/* core.*
 
 # Makefile debugging
 #===================
