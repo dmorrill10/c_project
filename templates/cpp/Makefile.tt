@@ -1,0 +1,131 @@
+# More precise but typically not necessary and more verbose
+#THIS_DIR := $(CURDIR)/$(dir $(lastword $(MAKEFILE_LIST)))
+THIS_DIR := ./
+
+# Project definitions
+#====================
+TARGET_BASE = <%= name %>
+TARGET := $(THIS_DIR)/bin/$(TARGET_BASE)
+default: $(TARGET)
+
+OBJ_DIR = $(THIS_DIR)/obj
+$(OBJ_DIR):
+	-mkdir $(OBJ_DIR)
+
+SRC_DIR := $(THIS_DIR)/src
+SRC_INCLUDES := -I$(SRC_DIR)
+
+# Compiler definitions
+#======================
+CC = gcc -std=gnu99
+CCPP = g++ -std=gnu++0x
+
+COMPILER := $(<%= compiler %>)
+
+DEBUG_SYMBOLS = -g
+
+TO_OBJ = -c
+
+TO_FILE = -o
+
+# Preprocess out asserts
+NO_ASSERTS = -DNDEBUG
+
+# Enable print log
+PRINT_LOG = -DPRINTLOG
+
+OPTIMIZATION = -O1
+
+WARNINGS = -Wall
+
+# CC options concatenated together
+FLAGS := $(WARNINGS) $(DEBUG_SYMBOLS) $(OPTIMIZATION) $(PRINT_LOG)
+
+LIBS = -lm
+
+# Vendor definitions
+#=======================
+VENDOR_DIR := $(THIS_DIR)/vendor/
+
+# Commander
+#----------
+COMMANDER_SRC_DIR := $(VENDOR_DIR)/commander.c/src
+COMMANDER_INCLUDES := -I$(COMMANDER_SRC_DIR)
+COMMANDER_SRC := $(COMMANDER_SRC_DIR)/commander.c
+COMMANDER_OBJ := $(OBJ_DIR)/commander.o
+$(COMMANDER_OBJ): $(COMMANDER_SRC) $(OBJ_DIR)
+	$(CC) $(TO_OBJ) $(FLAGS) $(TO_FILE) $@ $< $(COMMANDER_INCLUDES)
+
+# Timer
+#-----------
+TIMER_SRC_DIR := $(VENDOR_DIR)/timer/src
+TIMER_INCLUDES := -I$(TIMER_SRC_DIR)
+TIMER_SRC := $(TIMER_SRC_DIR)/timer.cpp
+TIMER_OBJ := $(OBJ_DIR)/timer.o
+$(TIMER_OBJ): $(TIMER_SRC) $(OBJ_DIR)
+	$(CCPP) $(TO_OBJ) $(FLAGS) $(TO_FILE) $@ $< $(TIMER_INCLUDES) $(SRC_INCLUDES)
+
+
+# Concatenated includes and objects
+#----------------------------------
+VENDOR_INCLUDES := $(COMMANDER_INCLUDES) $(TIMER_INCLUDES)
+VENDOR_OBJS := $(COMMANDER_OBJ) $(TIMER_OBJ)
+
+# Project
+#========
+INCLUDES := $(VENDOR_INCLUDES) $(SRC_INCLUDES)
+
+# Main
+#-----
+MAIN_SRC := $(SRC_DIR)/main.<%= extension %>
+MAIN_OBJ := $(OBJ_DIR)/main.o
+$(MAIN_OBJ): $(MAIN_SRC) $(OBJ_DIR)
+	$(COMPILER) $(TO_OBJ) $(FLAGS) $(TO_FILE) $@ $< $(INCLUDES)
+
+# Concatenated objects
+#---------------------
+PROJECT_OBJS :=
+
+# Target
+#-------
+$(TARGET): $(MAIN_OBJ) $(PROJECT_OBJS) $(VENDOR_OBJS)
+	$(COMPILER) $(TO_FILE) $@ $^ $(LIBS)
+	chmod 755 $@
+
+
+# Testing
+#===========
+CATCH_DIR := $(VENDOR_DIR)/catch
+TEST_DIR := $(THIS_DIR)/test
+TEST_SUPPORT_DIR := $(TEST_DIR)/support
+TEST_INCLUDES := -I$(CATCH_DIR) -I$(TEST_SUPPORT_DIR) $(INCLUDES)
+SYMBOLS = 
+
+TEST_EXECUTABLE_DIR := $(TEST_DIR)/bin
+$(TEST_EXECUTABLE_DIR):
+	-mkdir $(TEST_EXECUTABLE_DIR)
+
+# Test 1
+#-------------
+TEST1_SRC := $(TEST_DIR)/test_<%= name %>.<%= extension %>
+TEST1 := $(TEST_EXECUTABLE_DIR)/test_<%= name %>
+
+$(TEST1): $(TEST1_SRC) $(PROJECT_OBJS) $(VENDOR_OBJS)
+	$(COMPILER) $(TO_FILE) $@ $^ $(TEST_SUPPORT_DIR)/test_helper.cpp $(TEST_INCLUDES) $(LIBS)
+	chmod 755 $@
+
+# Automatic tests
+#----------------
+test: clean $(TEST_EXECUTABLE_DIR) $(TEST1)
+	$(TEST1)
+
+# Clean
+#============
+clean:
+	-rm -fr $(TARGET) obj *.out $(THIS_DIR)/test/*.out core.*
+
+# Makefile debugging
+#===================
+print-%:
+	@echo $* = $($*)
+

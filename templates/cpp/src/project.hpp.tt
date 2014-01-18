@@ -1,0 +1,8 @@
+#ifndef <%= header_guard %>
+#define <%= header_guard %>
+
+// Types ----------------
+// Constants -------------
+// Functions -----------------
+
+#endif
